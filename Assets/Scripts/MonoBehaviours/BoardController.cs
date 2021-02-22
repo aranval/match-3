@@ -22,7 +22,6 @@ public class BoardController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        Debug.Log("Debug on " + gameObject.name, gameObject);
         CreateAndPopulateBoard(board);
     }
 
@@ -32,6 +31,11 @@ public class BoardController : MonoBehaviour
         SwapTiles();
     }
 
+    /*
+     * @board BoardSO
+     * CreateAndPopulateBoard generate a board and fills it with
+     * random balls.
+     */
     private void CreateAndPopulateBoard(BoardSO board)
     {
         Debug.Log("CreateAndPoulateBoard called.");
@@ -59,6 +63,11 @@ public class BoardController : MonoBehaviour
         Debug.Log("Loop count: " + loopCount);
     }
 
+    /*
+     *  @board BoardSO
+     *  CleanInitBoard cleans auto-generated board of any matches
+     *  Changes tiles that are in matches to random colours 
+     */
     private void CleanInitBoard(BoardSO board)
     {
         loopCount++;
@@ -80,6 +89,14 @@ public class BoardController : MonoBehaviour
         FindAllMatches();
     }
 
+    /*
+    * FallDownAndRefillBoard iterates twice over the tiles. On the first run through
+    * it identifies columns that need to drop and on the second run through
+    * for the spots that were left dirty by the drop it picks a random colored balls 
+    * and fills them.
+    * Execution of bonus Tile matches at its current state does not work as intended - current
+    * code is in place just to check if it works at least for some cases that are covered
+    */
     private void FallDownAndRefillBoard()
     {
         Debug.Log("FallDownAndRefillBoard() started.");
@@ -127,29 +144,40 @@ public class BoardController : MonoBehaviour
 
 
 
-    private void DropColumn(GameObject tile)
+    /*
+    * @sourceTile first tile that needs to be dropped in a column
+    * DropColumn identifies length of a drop balls in a column are supposed
+    * to make and proceeds to interate over remaining balls in a column
+    * starting with sourceTile dropping them by calculated length
+    */
+    private void DropColumn(GameObject sourceTile)
     {
         int droplength = 0;
-        for (int i = tile.GetComponent<Tile>().row - 1; i >= 0; i--)
+        for (int i = sourceTile.GetComponent<Tile>().row - 1; i >= 0; i--)
         {
             droplength++;
-            if (i > 0 && !tiles[tile.GetComponent<Tile>().column, i-1].GetComponent<Tile>().dirty)
+            if (i > 0 && !tiles[sourceTile.GetComponent<Tile>().column, i-1].GetComponent<Tile>().dirty)
             {
                 break;
             }
         }
-        Debug.Log("DropColumn started. " + tile.name + " by " + droplength +  " row(s)");
-        for (int i = tile.GetComponent<Tile>().row; i < board.height; i++)
+        Debug.Log("DropColumn started. " + sourceTile.name + " by " + droplength +  " row(s)");
+        for (int i = sourceTile.GetComponent<Tile>().row; i < board.height; i++)
         {
-            tile.GetComponent<Tile>().dirty = true;
-            tiles[tile.GetComponent<Tile>().column, i - droplength].GetComponent<Tile>().ballSO = tile.GetComponent<Tile>().ballSO;
-            tiles[tile.GetComponent<Tile>().column, i - droplength].GetComponent<SpriteRenderer>().sprite = tile.GetComponent<Tile>().ballSO.sprite;
-            tiles[tile.GetComponent<Tile>().column, i - droplength].GetComponent<Tile>().tileBallname = tile.GetComponent<Tile>().tileBallname;
-            tiles[tile.GetComponent<Tile>().column, i - droplength].GetComponent<Tile>().dirty = false;
-            if (i < board.height - 1) { tile = tiles[tile.GetComponent<Tile>().column, i + 1]; }
+            sourceTile.GetComponent<Tile>().dirty = true;
+            tiles[sourceTile.GetComponent<Tile>().column, i - droplength].GetComponent<Tile>().ballSO = sourceTile.GetComponent<Tile>().ballSO;
+            tiles[sourceTile.GetComponent<Tile>().column, i - droplength].GetComponent<SpriteRenderer>().sprite = sourceTile.GetComponent<Tile>().ballSO.sprite;
+            tiles[sourceTile.GetComponent<Tile>().column, i - droplength].GetComponent<Tile>().tileBallname = sourceTile.GetComponent<Tile>().tileBallname;
+            tiles[sourceTile.GetComponent<Tile>().column, i - droplength].GetComponent<Tile>().dirty = false;
+            if (i < board.height - 1) { sourceTile = tiles[sourceTile.GetComponent<Tile>().column, i + 1]; }
         }
     }
 
+    /*
+    * SwapTiles enables ability to move balls to different positions
+    * And swaps them back if there is no match found.
+    * Executes FallDownAndRefillBoard(); after match is found.
+    */
     private void SwapTiles()
     {
         Vector2 mousePosition = Camera.main.ScreenToWorldPoint(Input.mousePosition);
@@ -203,7 +231,9 @@ public class BoardController : MonoBehaviour
     }
 
     /*
-     * Yeah, tile/ball movement is atrocious and so is the code below that was needed to make it work like a match3 game
+     * @targetTile tile that is being moved with dragndrop
+     * CheckMovementConstraints locks ability to match tile with rules of match-3 games. 
+     * Disable movementConstraint for easier testing. 
      */
     private bool CheckMovementConstraints(GameObject targetTile)
     {
@@ -223,12 +253,10 @@ public class BoardController : MonoBehaviour
                 tmpTile.GetComponent<Tile>().row - 1 == targetTile.GetComponent<Tile>().row) { return true; }
             return false;
         }
-        throw new NotImplementedException();
     }
 
     /*
      * @sourceTile source Tile for ball colour
-     * @destinationTile dest Tile for new location
      * FindMatch checks if a ball after being moved to the new location becomes a match
      */
     private bool FindMatch(GameObject sourceTile)
@@ -340,6 +368,10 @@ public class BoardController : MonoBehaviour
         return false;
     }
 
+    /*
+      * FindAllMatches interates over tiles, checks if particular Tile is matched
+      * and then dirties every tile that is part of that match
+     */
     private void FindAllMatches()
     {
         //Debug.Log("FindAllMatches test begin. [0,0] " + FindMatch(tiles[0, 0]) + " " + latestMatchFound);
@@ -418,7 +450,9 @@ public class BoardController : MonoBehaviour
     }
 
     /*
-     * if more special objects create enum class
+     * @ballSO needed for color check
+     * ApplyColorPunchBonus dirties every tile with a ball of the same colour 
+     * as source ballSO
      */
     private void ApplyColorPunchBonus(BallSO ballSO)
     {
@@ -431,6 +465,10 @@ public class BoardController : MonoBehaviour
         }
     }
 
+    /*
+    * @tile tile with ball consisting AllAround bonus
+    * ApplyAllAroundBonus dirties all the tiles around a source tile at range of 1 
+    */
     private void ApplyAllAroundBonus(GameObject tile)
     {
         if (tile.GetComponent<Tile>().column < board.width - 1) { tiles[tile.GetComponent<Tile>().column + 1, tile.GetComponent<Tile>().row].GetComponent<Tile>().dirty = true; }
